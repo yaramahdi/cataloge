@@ -1,0 +1,23 @@
+{
+  "name": "shein-reseller-dashboard",
+  "version": "1.0.0",
+  "description": "لوحة تحكم شخصية لمتجر ملابس - إدارة طلبات ومنتجات شي إن",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "migrate:images": "node db/migrate.js",
+    "export:data": "node db/export.js",
+    "import:data": "node db/import.js"
+  },
+  "dependencies": {
+    "cloudinary": "^2.10.0",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
+    "pg": "^8.21.0",
+    "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "better-sqlite3": "^12.10.0"
+  }
+}
