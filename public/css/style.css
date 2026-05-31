@@ -14,9 +14,11 @@ body {
 
 #navbar {
   background: #1a1a2e;
-  padding: 1rem 2rem;
+  padding: 1rem;
   display: flex;
-  gap: 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -28,6 +30,7 @@ body {
   font-size: 1.1rem;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
+  white-space: nowrap;
 }
 
 .nav-link:hover,
@@ -114,6 +117,8 @@ label {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .order-card h3 {
@@ -141,6 +146,8 @@ label {
   gap: 0.5rem;
   padding: 0.5rem;
   direction: rtl;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .product-row-img {
@@ -195,6 +202,7 @@ label {
   display: flex;
   gap: 0.4rem;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .product-row-actions button {
@@ -315,8 +323,18 @@ label {
 
 /* Responsive */
 @media (max-width: 600px) {
+  #navbar {
+    padding: 0.75rem;
+  }
+  .nav-link {
+    flex: 1 1 45%;
+    text-align: center;
+  }
   .grid-2 {
     grid-template-columns: 1fr;
+  }
+  .order-card {
+    justify-content: flex-start;
   }
   .product-row {
     flex-wrap: wrap;
@@ -330,6 +348,10 @@ label {
   }
   .product-row-actions {
     width: 100%;
-    justify-content: flex-end;
+    justify-content: flex-start;
+  }
+  .modal-box {
+    min-width: auto;
+    padding: 1.25rem;
   }
 }
