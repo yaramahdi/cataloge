@@ -249,8 +249,25 @@ router.get('/orders/:id/charts', async (req, res) => {
   const pool = await getPool();
   const { rows: orderRows } = await pool.query('SELECT * FROM orders WHERE id = $1', [req.params.id]);
   if (orderRows.length === 0) return res.status(404).json({ error: 'Order not found' });
+  const order = orderRows[0];
   const { rows: sales } = await pool.query('SELECT * FROM sales WHERE order_id = $1 ORDER BY sold_at ASC', [req.params.id]);
-  res.json({ order: orderRows[0], sales });
+  const { rows: products } = await pool.query('SELECT quantity, raw_price, selling_price FROM products WHERE order_id = $1', [req.params.id]);
+
+  let plannedTotalSelling = 0;
+  let plannedTotalCost = 0;
+  products.forEach(product => {
+    plannedTotalSelling += product.selling_price * product.quantity;
+    plannedTotalCost += product.raw_price * product.quantity;
+  });
+
+  const summary = {
+    planned_total_selling: plannedTotalSelling,
+    planned_total_cost: plannedTotalCost,
+    formatted_cost: order.formatted_cost || 0,
+    order_total_price: order.total_price
+  };
+
+  res.json({ order, sales, summary });
 });
 
 module.exports = router;

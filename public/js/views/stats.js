@@ -75,7 +75,7 @@ router.add('/orders/:id/stats', async (params) => {
 
 router.add('/orders/:id/charts', async (params) => {
   const data = await API.get(`/orders/${params.id}/charts`);
-  const { order, sales } = data;
+  const { order, summary } = data;
   const app = document.getElementById('app');
   app.innerHTML = '';
 
@@ -89,65 +89,50 @@ router.add('/orders/:id/charts', async (params) => {
   ]);
   app.appendChild(nav);
 
-  if (!sales || sales.length === 0) {
-    app.appendChild(el('div', { className: 'empty-state' }, 'لا توجد مبيعات بعد'));
-    return;
-  }
+  const container = el('div', { className: 'chart-container', style: 'max-width:600px;margin:0 auto' });
+  const canvas = el('canvas', { id: 'chart-donut' });
+  container.appendChild(canvas);
+  app.appendChild(container);
 
-  const container1 = el('div', { className: 'chart-container' });
-  container1.appendChild(el('canvas', { id: 'chart-bar' }));
-  app.appendChild(container1);
+  const labels = [
+    'سعر الطلبية مع التنسيق',
+    'تكلفة التنسيق',
+    'إجمالي البيع مع الربح'
+  ];
+  const values = [
+    summary.order_total_price,
+    summary.formatted_cost,
+    summary.planned_total_selling
+  ];
 
-  const container2 = el('div', { className: 'chart-container' });
-  container2.appendChild(el('canvas', { id: 'chart-line' }));
-  app.appendChild(container2);
+  const backgroundColors = ['#0f3460', '#e94560', '#27ae60'];
+  const borderColors = ['#0b2447', '#a40e3b', '#1f7a3f'];
 
-  const container3 = el('div', { className: 'chart-container' });
-  container3.appendChild(el('canvas', { id: 'chart-doughnut' }));
-  app.appendChild(container3);
-
-  const labels = sales.map((_, i) => `بيع ${i + 1}`);
-  const rawPrices = sales.map(s => s.raw_price);
-  const sellPrices = sales.map(s => s.selling_price);
-  const profits = sales.map(s => s.selling_price - s.raw_price);
-
-  new Chart(document.getElementById('chart-bar'), {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        { label: 'سعر البيع', data: sellPrices, backgroundColor: '#27ae60' },
-        { label: 'الربح', data: profits, backgroundColor: '#0f3460' }
-      ]
-    },
-    options: { responsive: true, plugins: { legend: { labels: { font: { family: 'Tahoma' } } } } }
-  });
-
-  let cumulative = 0;
-  const cumData = profits.map(p => { cumulative += p; return cumulative; });
-
-  new Chart(document.getElementById('chart-line'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{ label: 'الربح التراكمي', data: cumData, borderColor: '#0f3460', fill: false }]
-    },
-    options: { responsive: true, plugins: { legend: { labels: { font: { family: 'Tahoma' } } } } }
-  });
-
-  const productProfits = {};
-  for (const s of sales) {
-    const key = s.product_id || 'منتج';
-    productProfits[key] = (productProfits[key] || 0) + (s.selling_price - s.raw_price);
-  }
-
-  new Chart(document.getElementById('chart-doughnut'), {
+  new Chart(document.getElementById('chart-donut'), {
     type: 'doughnut',
     data: {
-      labels: Object.keys(productProfits).map(() => order.account_name),
-      datasets: [{ data: Object.values(productProfits), backgroundColor: ['#0f3460', '#e94560', '#27ae60', '#f39c12', '#8e44ad'] }]
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: backgroundColors,
+        borderColor: borderColors,
+        borderWidth: 2
+      }]
     },
-    options: { responsive: true, plugins: { legend: { labels: { font: { family: 'Tahoma' } } } } }
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { font: { family: 'Tahoma', size: 14 } }
+        },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.label}: ${ctx.parsed.toFixed(2)} ₪`
+          }
+        }
+      }
+    }
   });
 });
 
