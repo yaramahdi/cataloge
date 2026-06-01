@@ -156,6 +156,43 @@ router.post('/products/:id/sell', async (req, res) => {
   res.json({ saleId, newQty, soldOut: !!soldOut, profit });
 });
 
+router.post('/products/:id/undo', async (req, res) => {
+  const pool = await getPool();
+  const productId = req.params.id;
+
+  const { rows } = await pool.query('SELECT * FROM products WHERE id = $1', [productId]);
+  if (rows.length === 0) return res.status(404).json({ error: 'Product not found' });
+  const product = rows[0];
+
+  const { rows: saleRows } = await pool.query(
+    `SELECT * FROM sales WHERE product_id = $1 ORDER BY sold_at DESC, id DESC LIMIT 1`,
+    [productId]
+  );
+  if (saleRows.length === 0) return res.status(400).json({ error: 'لا يوجد بيع لإلغائه' });
+
+  const newQty = product.quantity + 1;
+  const newSoldCount = Math.max(0, (product.sold_count || 0) - 1);
+  const soldOut = newQty <= 0 ? 1 : 0;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM sales WHERE id = $1', [saleRows[0].id]);
+    await client.query(
+      'UPDATE products SET quantity = $1, sold_count = $2, sold_out = $3 WHERE id = $4',
+      [newQty, newSoldCount, soldOut, productId]
+    );
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK');
+    throw e;
+  } finally {
+    client.release();
+  }
+
+  res.json({ restored: true, newQty, soldOut: !!soldOut });
+});
+
 router.delete('/products/:id', async (req, res) => {
   const pool = await getPool();
   const { rows } = await pool.query('SELECT image_path FROM products WHERE id = $1', [req.params.id]);

@@ -77,6 +77,11 @@ button:hover {
   color: #fff;
 }
 
+.btn-warning {
+  background: #f39c12;
+  color: #fff;
+}
+
 .card {
   background: #fff;
   border-radius: 10px;

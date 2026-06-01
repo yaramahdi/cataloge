@@ -160,7 +160,14 @@ function renderProducts(products, grid, orderId) {
 
     const actions = el('div', { className: 'product-row-actions' });
     if (p.sold_out) {
-      actions.appendChild(el('span', { className: 'sold-out-badge' }, 'تم البيع'));
+      actions.appendChild(el('button', {
+        className: 'btn-warning',
+        onClick: async () => {
+          if (confirm('هل تريد إلغاء البيع وإرجاع المنتج؟')) {
+            await undoSale(p.id);
+          }
+        }
+      }, 'إلغاء البيع'));
     }
     if (!p.sold_out) {
       actions.appendChild(el('button', { className: 'btn-success', onClick: () => showSellModal(p) }, 'بيع'));
@@ -245,6 +252,11 @@ function showSellModal(product) {
 
 async function recordSale(productId, sellingPrice) {
   await API.post(`/products/${productId}/sell`, { selling_price: sellingPrice });
+  router.resolve();
+}
+
+async function undoSale(productId) {
+  await API.post(`/products/${productId}/undo`);
   router.resolve();
 }
 
