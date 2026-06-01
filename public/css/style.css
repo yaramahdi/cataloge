@@ -281,9 +281,19 @@ label {
   border-radius: 4px;
 }
 
-.stats-table .total-row {
+..stats-table .total-row {
   font-weight: 700;
   background: #f0f0f0;
+}
+
+.profit-positive {
+  color: #27ae60;
+  font-weight: 700;
+}
+
+.profit-negative {
+  color: #e94560;
+  font-weight: 700;
 }
 
 /* Modal */

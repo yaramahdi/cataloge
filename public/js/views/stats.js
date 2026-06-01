@@ -24,7 +24,7 @@ router.add('/orders/:id/stats', async (params) => {
     el('div', { className: 'summary-item' }, [el('div', { className: 'data-label' }, 'تكلفة التنسيق:'), el('div', { className: 'data-value' }, `${summary.formatted_cost.toFixed(2)} ₪`)]),
     el('div', { className: 'summary-item', style: 'grid-column:1 / -1' }, [
       el('div', { className: 'data-label' }, 'صافي الربح بعد التنسيق:'),
-      el('div', { className: 'data-value', style: `font-weight:bold;color:${summary.net_profit_after_formatting >= 0 ? '#27ae60' : '#e94560'}` }, `${summary.net_profit_after_formatting.toFixed(2)} ₪`)
+      el('div', { className: `data-value ${summary.net_profit_after_formatting >= 0 ? 'profit-positive' : 'profit-negative'}` }, `${summary.net_profit_after_formatting.toFixed(2)} ₪`)
     ]),
     el('div', { className: 'summary-item', style: 'grid-column:1 / -1' }, [
       el('div', { className: 'data-label' }, 'حالة التكلفة:'),
@@ -55,18 +55,19 @@ router.add('/orders/:id/stats', async (params) => {
     const profit = s.selling_price - s.raw_price;
     totalProfit += profit;
     const imgUrl = s.image_path || '';
+    const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
     const row = el('tr', {}, [
       el('td', {}, imgUrl ? [el('img', { src: imgUrl, alt: '' })] : ['-']),
       el('td', {}, s.raw_price.toFixed(2)),
       el('td', {}, s.selling_price.toFixed(2)),
-      el('td', {}, profit.toFixed(2))
+      el('td', { className: profitClass }, profit.toFixed(2))
     ]);
     tbody.appendChild(row);
   });
 
   const totalRow = el('tr', { className: 'total-row' }, [
     el('td', { colSpan: 3, style: 'text-align:left' }, 'إجمالي الربح:'),
-    el('td', {}, totalProfit.toFixed(2))
+    el('td', { className: totalProfit >= 0 ? 'profit-positive' : 'profit-negative' }, totalProfit.toFixed(2))
   ]);
   tbody.appendChild(totalRow);
   table.appendChild(tbody);
