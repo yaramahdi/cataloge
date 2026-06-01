@@ -95,19 +95,23 @@ router.add('/orders/:id/charts', async (params) => {
   container.appendChild(canvas);
   app.appendChild(container);
 
+  const netProfit = summary.net_profit_after_formatting;
+  const profitLabel = netProfit >= 0 ? 'صافي الربح' : 'الخسارة الصافية';
+  const profitValue = Math.abs(netProfit);
+
   const labels = [
-    'سعر الطلبية مع التنسيق',
+    'إجمالي تكلفة المنتجات',
     'تكلفة التنسيق',
-    'إجمالي البيع مع الربح'
+    profitLabel
   ];
   const values = [
-    summary.order_total_price,
+    summary.planned_total_cost,
     summary.formatted_cost,
-    summary.planned_total_selling
+    profitValue
   ];
 
-  const backgroundColors = ['#0f3460', '#e94560', '#27ae60'];
-  const borderColors = ['#0b2447', '#a40e3b', '#1f7a3f'];
+  const backgroundColors = ['#0f3460', '#e94560', netProfit >= 0 ? '#27ae60' : '#c0392b'];
+  const borderColors = ['#0b2447', '#a40e3b', netProfit >= 0 ? '#1f7a3f' : '#992d22'];
 
   new Chart(document.getElementById('chart-donut'), {
     type: 'doughnut',

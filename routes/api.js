@@ -297,10 +297,14 @@ router.get('/orders/:id/charts', async (req, res) => {
     plannedTotalCost += product.raw_price * product.quantity;
   });
 
+  const formattingCost = order.formatted_cost || 0;
+  const netProfitAfterFormatting = plannedTotalSelling - plannedTotalCost - formattingCost;
+
   const summary = {
     planned_total_selling: plannedTotalSelling,
     planned_total_cost: plannedTotalCost,
-    formatted_cost: order.formatted_cost || 0,
+    formatted_cost: formattingCost,
+    net_profit_after_formatting: netProfitAfterFormatting,
     order_total_price: order.total_price
   };
 
