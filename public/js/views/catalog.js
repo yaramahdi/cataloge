@@ -19,6 +19,10 @@ router.add('/orders/:id', async (params) => {
     infoItems.push(el('span', { style: 'color:#666;font-weight:600' }, 'سعر التنسيق:'));
     infoItems.push(el('span', { className: 'formatted-badge' }, order.formatted_price));
   }
+  if (typeof order.formatted_cost !== 'undefined') {
+    infoItems.push(el('span', { style: 'color:#666;font-weight:600' }, 'تكلفة التنسيق:'));
+    infoItems.push(el('span', { className: 'formatted-badge' }, `${(order.formatted_cost || 0).toFixed(2)} ₪`));
+  }
   infoItems.push(el('button', { className: 'btn-primary', style: 'padding:0.3rem 0.8rem;font-size:0.82rem', onClick: () => showEditOrderModal(order) }, 'تعديل'));
 
   app.appendChild(el('div', { className: 'card', style: 'margin-bottom:1rem;padding:1rem 1.25rem' }, [
@@ -332,15 +336,24 @@ function showEditOrderModal(order) {
   box.appendChild(el('label', { htmlFor: 'editFormattedPrice' }, 'السعر مع التنسيق'));
   box.appendChild(el('input', { id: 'editFormattedPrice', type: 'text', placeholder: 'مثال: 299.99 ₪', value: order.formatted_price || '' }));
 
+  box.appendChild(el('label', { htmlFor: 'editFormattedCost' }, 'تكلفة التنسيق'));
+  box.appendChild(el('input', { id: 'editFormattedCost', type: 'number', step: '0.01', value: String(order.formatted_cost || 0) }));
+
   const actions = el('div', { className: 'modal-actions' }, [
     el('button', { className: 'btn-primary', onClick: async () => {
       const totalPrice = parseFloat(document.getElementById('editTotalPrice').value);
       const formattedPrice = document.getElementById('editFormattedPrice').value.trim();
+      const formattedCost = parseFloat(document.getElementById('editFormattedCost').value);
 
       const priceVal = validatePositiveNumber(totalPrice, 'السعر الإجمالي');
       if (!priceVal.valid) { alert(priceVal.error); return; }
+      if (isNaN(formattedCost) || formattedCost < 0) { alert('تكلفة التنسيق يجب أن تكون رقماً غير سالباً'); return; }
 
-      await API.put(`/orders/${order.id}`, { total_price: priceVal.value, formatted_price: formattedPrice });
+      await API.put(`/orders/${order.id}`, {
+        total_price: priceVal.value,
+        formatted_price: formattedPrice,
+        formatted_cost: formattedCost
+      });
       overlay.remove();
       router.resolve();
     } }, 'حفظ التعديلات'),

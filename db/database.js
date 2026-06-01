@@ -15,6 +15,7 @@ async function initDb() {
   if (initialized) return;
   const schema = fs.readFileSync(SCHEMA_PATH, 'utf8');
   await pool.query(schema);
+  await pool.query('ALTER TABLE orders ADD COLUMN IF NOT EXISTS formatted_cost REAL NOT NULL DEFAULT 0');
   initialized = true;
   console.log('[DB] PostgreSQL initialized');
 }

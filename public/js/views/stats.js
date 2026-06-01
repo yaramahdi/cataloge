@@ -2,7 +2,7 @@
 
 router.add('/orders/:id/stats', async (params) => {
   const data = await API.get(`/orders/${params.id}/stats`);
-  const { order, sales } = data;
+  const { order, sales, summary } = data;
   const app = document.getElementById('app');
   app.innerHTML = '';
 
@@ -16,6 +16,22 @@ router.add('/orders/:id/stats', async (params) => {
     el('button', { className: 'btn-danger', onClick: () => { location.hash = '#/orders'; } }, 'العودة')
   ]);
   app.appendChild(nav);
+
+  const summaryCard = el('div', { className: 'card', style: 'margin-bottom:1rem;padding:1rem;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem' }, [
+    el('div', { className: 'summary-item' }, [el('div', { className: 'data-label' }, 'إجمالي سعر البيع المخطط:'), el('div', { className: 'data-value' }, `${summary.planned_total_selling.toFixed(2)} ₪`)]),
+    el('div', { className: 'summary-item' }, [el('div', { className: 'data-label' }, 'إجمالي تكلفة المنتجات:'), el('div', { className: 'data-value' }, `${summary.planned_total_cost.toFixed(2)} ₪`)]),
+    el('div', { className: 'summary-item' }, [el('div', { className: 'data-label' }, 'إجمالي الربح المخطط:'), el('div', { className: 'data-value' }, `${summary.planned_total_profit.toFixed(2)} ₪`)]),
+    el('div', { className: 'summary-item' }, [el('div', { className: 'data-label' }, 'تكلفة التنسيق:'), el('div', { className: 'data-value' }, `${summary.formatted_cost.toFixed(2)} ₪`)]),
+    el('div', { className: 'summary-item', style: 'grid-column:1 / -1' }, [
+      el('div', { className: 'data-label' }, 'صافي الربح بعد التنسيق:'),
+      el('div', { className: 'data-value', style: `font-weight:bold;color:${summary.net_profit_after_formatting >= 0 ? '#27ae60' : '#e94560'}` }, `${summary.net_profit_after_formatting.toFixed(2)} ₪`)
+    ]),
+    el('div', { className: 'summary-item', style: 'grid-column:1 / -1' }, [
+      el('div', { className: 'data-label' }, 'حالة التكلفة:'),
+      el('div', { className: 'data-value' }, summary.covers_formatting ? 'يغطي الربح تكلفة التنسيق' : 'الربح لا يغطي تكلفة التنسيق')
+    ])
+  ]);
+  app.appendChild(summaryCard);
 
   if (!sales || sales.length === 0) {
     app.appendChild(el('div', { className: 'empty-state' }, 'لا توجد مبيعات مسجلة بعد'));

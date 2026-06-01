@@ -18,17 +18,21 @@ router.get('/orders', async (req, res) => {
 
 router.post('/orders', async (req, res) => {
   const pool = await getPool();
-  const { account_name, total_price, formatted_price } = req.body;
+  const { account_name, total_price, formatted_price, formatted_cost } = req.body;
   if (!account_name || account_name.trim() === '') {
     return res.status(400).json({ error: 'account_name مطلوب' });
   }
   if (total_price == null || isNaN(total_price) || total_price <= 0) {
     return res.status(400).json({ error: 'total_price يجب أن يكون رقماً موجباً' });
   }
+  const costValue = formatted_cost != null ? parseFloat(formatted_cost) : 0;
+  if (isNaN(costValue) || costValue < 0) {
+    return res.status(400).json({ error: 'formatted_cost يجب أن يكون رقماً غير سالباً' });
+  }
   const id = uuidv4();
   const { rows } = await pool.query(
-    'INSERT INTO orders (id, account_name, total_price, formatted_price) VALUES ($1, $2, $3, $4) RETURNING *',
-    [id, account_name.trim(), total_price, formatted_price || '']
+    'INSERT INTO orders (id, account_name, total_price, formatted_price, formatted_cost) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+    [id, account_name.trim(), total_price, formatted_price || '', costValue]
   );
   res.status(201).json(rows[0]);
 });
@@ -58,15 +62,17 @@ router.put('/orders/:id', async (req, res) => {
   if (existing.length === 0) return res.status(404).json({ error: 'Order not found' });
 
   const order = existing[0];
-  const { total_price, formatted_price } = req.body;
+  const { total_price, formatted_price, formatted_cost } = req.body;
   const price = total_price != null ? parseFloat(total_price) : order.total_price;
   const fmtPrice = formatted_price != null ? formatted_price : order.formatted_price;
+  const costValue = formatted_cost != null ? parseFloat(formatted_cost) : (order.formatted_cost || 0);
 
   if (isNaN(price) || price <= 0) return res.status(400).json({ error: 'total_price يجب أن يكون رقماً موجباً' });
+  if (isNaN(costValue) || costValue < 0) return res.status(400).json({ error: 'formatted_cost يجب أن يكون رقماً غير سالباً' });
 
   const { rows } = await pool.query(
-    'UPDATE orders SET total_price = $1, formatted_price = $2 WHERE id = $3 RETURNING *',
-    [price, fmtPrice, req.params.id]
+    'UPDATE orders SET total_price = $1, formatted_price = $2, formatted_cost = $3 WHERE id = $4 RETURNING *',
+    [price, fmtPrice, costValue, req.params.id]
   );
   res.json(rows[0]);
 });
@@ -209,8 +215,34 @@ router.get('/orders/:id/stats', async (req, res) => {
   const pool = await getPool();
   const { rows: orderRows } = await pool.query('SELECT * FROM orders WHERE id = $1', [req.params.id]);
   if (orderRows.length === 0) return res.status(404).json({ error: 'Order not found' });
+  const order = orderRows[0];
   const { rows: sales } = await pool.query('SELECT * FROM sales WHERE order_id = $1 ORDER BY sold_at DESC', [req.params.id]);
-  res.json({ order: orderRows[0], sales });
+  const { rows: products } = await pool.query('SELECT quantity, raw_price, selling_price FROM products WHERE order_id = $1', [req.params.id]);
+
+  let plannedTotalSelling = 0;
+  let plannedTotalCost = 0;
+  products.forEach(product => {
+    plannedTotalSelling += product.selling_price * product.quantity;
+    plannedTotalCost += product.raw_price * product.quantity;
+  });
+
+  const plannedTotalProfit = plannedTotalSelling - plannedTotalCost;
+  const formattingCost = order.formatted_cost || 0;
+  const netProfitAfterFormatting = plannedTotalProfit - formattingCost;
+  const coversFormatting = netProfitAfterFormatting >= 0;
+
+  res.json({
+    order,
+    sales,
+    summary: {
+      planned_total_selling: plannedTotalSelling,
+      planned_total_cost: plannedTotalCost,
+      planned_total_profit: plannedTotalProfit,
+      formatted_cost: formattingCost,
+      net_profit_after_formatting: netProfitAfterFormatting,
+      covers_formatting: coversFormatting
+    }
+  });
 });
 
 router.get('/orders/:id/charts', async (req, res) => {

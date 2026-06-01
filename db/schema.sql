@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS orders (
   account_name TEXT NOT NULL,
   total_price REAL NOT NULL,
   formatted_price TEXT,
+  formatted_cost REAL NOT NULL DEFAULT 0,
   created_at TEXT DEFAULT (datetime('now', 'localtime'))
 );
 

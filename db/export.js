@@ -16,7 +16,7 @@ function exportToSql() {
 
   const orders = db.prepare('SELECT * FROM orders').all();
   for (const o of orders) {
-    sql += `INSERT INTO orders (id, account_name, total_price, formatted_price, created_at) VALUES ('${o.id}', '${(o.account_name || '').replace(/'/g, "''")}', ${o.total_price}, '${(o.formatted_price || '').replace(/'/g, "''")}', '${o.created_at}');\n`;
+    sql += `INSERT INTO orders (id, account_name, total_price, formatted_price, formatted_cost, created_at) VALUES ('${o.id}', '${(o.account_name || '').replace(/'/g, "''")}', ${o.total_price}, '${(o.formatted_price || '').replace(/'/g, "''")}', ${o.formatted_cost || 0}, '${o.created_at}');\n`;
   }
 
   const products = db.prepare('SELECT * FROM products').all();

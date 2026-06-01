@@ -43,7 +43,8 @@ router.add('/orders/new', async () => {
   const fields = [
     { label: 'اسم الحساب', id: 'accountName', type: 'text', placeholder: 'مثال: yaramahdi80' },
     { label: 'السعر الإجمالي', id: 'totalPrice', type: 'number', step: '0.01', placeholder: '0.00 ₪' },
-    { label: 'السعر مع التنسيق', id: 'formattedPrice', type: 'text', placeholder: 'مثال: 299.99 ₪' }
+    { label: 'السعر مع التنسيق', id: 'formattedPrice', type: 'text', placeholder: 'مثال: 299.99 ₪' },
+    { label: 'تكلفة التنسيق', id: 'formattedCost', type: 'number', step: '0.01', placeholder: '0.00 ₪' }
   ];
 
   fields.forEach(f => {
@@ -56,14 +57,21 @@ router.add('/orders/new', async () => {
       const accountName = document.getElementById('accountName').value.trim();
       const totalPrice = parseFloat(document.getElementById('totalPrice').value);
       const formattedPrice = document.getElementById('formattedPrice').value.trim();
+      const formattedCost = parseFloat(document.getElementById('formattedCost').value);
       
       const nameVal = validateRequired(accountName, 'اسم الحساب');
       if (!nameVal.valid) { alert(nameVal.error); return; }
       
       const priceVal = validatePositiveNumber(totalPrice, 'السعر الإجمالي');
       if (!priceVal.valid) { alert(priceVal.error); return; }
-      
-      const order = await API.post('/orders', { account_name: nameVal.value, total_price: priceVal.value, formatted_price: formattedPrice });
+      if (!isNaN(formattedCost) && formattedCost < 0) { alert('تكلفة التنسيق يجب أن تكون رقماً غير سالباً'); return; }
+      const costVal = isNaN(formattedCost) ? 0 : formattedCost;
+      const order = await API.post('/orders', {
+        account_name: nameVal.value,
+        total_price: priceVal.value,
+        formatted_price: formattedPrice,
+        formatted_cost: costVal
+      });
       location.hash = `#/orders/${order.id}`;
     } }, 'حفظ'),
     el('button', { className: 'btn-danger', onClick: () => { location.hash = '#/orders'; } }, 'إلغاء')
